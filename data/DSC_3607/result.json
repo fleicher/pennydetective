@@ -1,0 +1,25 @@
+{
+    "items": [
+        {
+            "desc": "ENSALADA OPTIMA",
+            "price": 2.79
+        },
+        {
+            "desc": "HUEVOS L 12 CARREF",
+            "price": 1.49
+        },
+        {
+            "desc": "P.L.S",
+            "price": 2.50
+        },
+        {
+            "desc": "POLLO TIKKA MASSALA",
+            "price": 2.95
+        },
+        {
+            "desc": "BAGUETINA X2",
+            "price": 0.40
+        }
+    ],
+    "total": 10.13
+}

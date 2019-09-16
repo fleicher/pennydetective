@@ -5,6 +5,7 @@ from typing import List, Set, Dict
 import numpy as np
 from fuzzywuzzy import fuzz
 
+from block import Block
 from item import Item
 from util import get_angle, get_abs_perp_angle_diff, rotate_point, get_dist_to_line, \
     format_price
@@ -12,7 +13,7 @@ from util import get_angle, get_abs_perp_angle_diff, rotate_point, get_dist_to_l
 
 class Receipt:
     REGEX = r"\d+(\.|,)\d\d"
-    TOTAL_WORDS = ("total", "summe", "suma", "zu zahlen", "pagar", "zwischensumme")
+    TOTAL_WORDS = ("total", "zu zahlen", "pagar", "zwischensumme", "summe", "suma",)
     TOTAL_THRESHOLD = 65
     COLUMN_ANGLE_TRESHOLD = math.pi / 8
     ROW_DIST_THRESHOLD = 0.05
@@ -20,6 +21,9 @@ class Receipt:
 
     def __init__(self, data):
         self.data = data
+
+        self.lines, self.words = [], []
+
         self.bounds = None
         self.prices: List[Dict] = []
         self.price2column_map: List[int] = []
@@ -27,6 +31,12 @@ class Receipt:
         self.column_x_rotated = None
         self.items: List[Item] = []
         self.total_desc = self.total_json = self.total = None
+
+        for block in self.data["Blocks"]:
+            if block["BlockType"] == "LINE":
+                self.lines.append(Block(block))
+            elif block["BlockType"] == "WORD":
+                self.words.append(Block(block))
 
     def analyze(self):
         self.find_writing_angle()
@@ -39,13 +49,21 @@ class Receipt:
         """
         take <=30 lines from the receipt and determine the angle of writing
         """
-        angles = []
-        for line in [self.lines[i] for i in range(0, len(self.lines), len(self.lines) // 30)]:
-            point_top_left = self.get_bound_of_word(line, 0)
-            point_top_right = self.get_bound_of_word(line, 1)
-            angles.append(get_angle(point_top_left, point_top_right))
-        self.angle = sum(angles) / len(angles)
-        return angles
+        some_lines = [self.lines[i] for i in range(0, len(self.lines), len(self.lines) // 30)]
+        angles = [get_angle(line.top_left, line.top_right) for line in some_lines]
+        return sum(angles) / len(angles)
+
+    # def find_writing_angle(self):
+    #     """
+    #     take <=30 lines from the receipt and determine the angle of writing
+    #     """
+    #     angles = []
+    #     for line in [self.lines_json[i] for i in range(0, len(self.lines_json), len(self.lines_json) // 30)]:
+    #         point_top_left = self.get_bound_of_word(line, 0)
+    #         point_top_right = self.get_bound_of_word(line, 1)
+    #         angles.append(get_angle(point_top_left, point_top_right))
+    #     self.angle = sum(angles) / len(angles)
+    #     return angles
 
     def find_prices(self):
         """
@@ -54,17 +72,28 @@ class Receipt:
         always take three consecutive numbers and store their lines
         the ones that fit together the best are our line!
         """
+
         pattern = re.compile(Receipt.REGEX)
-        self.prices = [word for word in self.words if pattern.match(word["Text"])]
+        # self.prices = [word for word in self.words_json if pattern.match(word["Text"])]
+        self.prices = []
+        for word in self.words:
+            if pattern.match(word.text):
+                self.prices.append(word)
+                word.is_price = True
 
     def find_total(self):
         current_total_json = None
         current_total_ratio = 0
-        for word in self.words:
-            ratio = max([fuzz.ratio(word["Text"].lower(), total_word) for total_word in Receipt.TOTAL_WORDS])
-            if ratio > current_total_ratio and ratio > Receipt.TOTAL_THRESHOLD:
-                current_total_ratio = ratio
-                current_total_json = word
+        for total_word in Receipt.TOTAL_WORDS:
+            for word in self.words_json:
+                # ratio = max([fuzz.ratio(word["Text"].lower(), total_word) for total_word in Receipt.TOTAL_WORDS])
+                ratio = fuzz.ratio(word["Text"].lower(), total_word)
+                if ratio > current_total_ratio and ratio > Receipt.TOTAL_THRESHOLD:
+                    current_total_ratio = ratio
+                    current_total_json = word
+            if current_total_json is not None:
+                # iterate through TOTAL words by priority if the first one is found -> break.
+                break
         if current_total_json is not None:
             print("Found Total: {}".format(current_total_json["Text"]))
             self.total_desc = current_total_json
@@ -127,7 +156,7 @@ class Receipt:
                 continue
             # calculate center of price.
             associated_lines = []
-            for line in self.lines:
+            for line in self.lines_json:
                 center_point = sum([Receipt.get_bound_of_word(line, i) for i in range(4)]) / 4
                 dist = get_dist_to_line(price_left_center_point, price_right_center_point, center_point)
                 if dist > Receipt.ROW_DIST_THRESHOLD:
@@ -156,11 +185,11 @@ class Receipt:
                 pass
 
     @property
-    def words(self):
+    def words_json(self):
         return self._get_blocks_of_type("WORD")
 
     @property
-    def lines(self):
+    def lines_json(self):
         return self._get_blocks_of_type("LINE")
 
     def _get_blocks_of_type(self, type_="LINE"):

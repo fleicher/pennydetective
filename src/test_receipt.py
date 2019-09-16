@@ -4,7 +4,6 @@ import os
 from typing import NamedTuple, Dict
 from unittest import TestCase
 
-import matplotlib.axes
 import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,22 +16,71 @@ class TestReceipt(TestCase):
     SHOW = True
     IMAGE_PATH = "../data/"
     IMAGES_NAMES = (
-        "DSC_3605",
+        "DSC_3618", # "DSC_3619"
     )
+
+    class Instance(NamedTuple):
+        receipt: Receipt
+        expected: Dict
+        name: str
+        idx: int
+        fig: matplotlib.figure.Figure = None
+        ax: matplotlib.figure.Axes = None
+        w: int = None
+        h: int = None
+
+        def draw_angle(self):
+            self.ax.arrow(self.w / 2, self.h / 2, math.cos(self.receipt.angle) * self.w / 10,
+                         math.sin(self.receipt.angle) * self.h / 10)
+
+        def draw_prices(self):
+            x, y = zip(*[Receipt.get_bound_of_word(price) for price in self.receipt.prices])
+
+            self.ax.plot(np.array(x) * self.w, np.array(y) * self.h, "bo")
+
+        def draw_total(self):
+            polygon = Polygon(np.array([Receipt.get_bound_of_word(self.receipt.total_desc, i)
+                                        for i in range(4)]) * np.array([self.w, self.h]), closed=True)
+            self.ax.plot(polygon.xy[:, 0], polygon.xy[:, 1], color='#6699cc', alpha=0.7, linewidth=3)
+            self.fig.show()
+
+        def draw_columns(self):
+            number_of_columns = len(set(self.receipt.price2column_map))
+            colors = [plt.get_cmap('gist_rainbow')(1. * i / number_of_columns) for i in range(number_of_columns)]
+
+            x, y = zip(*[Receipt.get_bound_of_word(price) for price in self.receipt.prices])
+            mapped_colors = list(map(lambda i: colors[i], self.receipt.price2column_map))
+            self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=mapped_colors, alpha=0.5)
+            for column_idx, x_rot in enumerate(self.receipt.column_x_rotated):
+                self.ax.text(x=x_rot * self.w, y=self.h / 10, s="{:.2f}".format(x_rot), c=colors[column_idx])
+
+        def draw_items(self):
+            number_items = len(self.receipt.items)
+            colors = [plt.get_cmap('gist_rainbow')(1. * i / number_items) for i in range(number_items)]
+            mapped_colors = list(map(lambda i: colors[i], range(number_items)))
+            x, y = zip(*[Receipt.get_bound_of_word(item.desc_json) for item in self.receipt.items])
+            self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=mapped_colors, alpha=0.5, edgecolors='b')
+            x, y = zip(*[Receipt.get_bound_of_word(item.price_json) for item in self.receipt.items])
+            self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=mapped_colors, alpha=0.3, edgecolors='b')
+
+            polygon = Polygon(np.array([Receipt.get_bound_of_word(self.receipt.total_json, i)
+                                        for i in range(4)]) * np.array([self.w, self.h]), closed=True)
+            self.ax.plot(polygon.xy[:, 0], polygon.xy[:, 1], color='#6699cc', alpha=0.7, linewidth=3)
+            self.fig.show()
+
+        def draw(self):
+            self.draw_angle()
+            self.draw_columns()
+            self.draw_items()
+            self.draw_total()
+
+        @staticmethod
+        def breakpoint():
+            print("break")
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.instances = []
-
-        class Instance(NamedTuple):
-            receipt: Receipt
-            expected: Dict
-            name: str
-            idx: int
-            fig: matplotlib.figure.Figure = None
-            ax: matplotlib.figure.Axes = None
-            w: int = None
-            h: int = None
 
         for n, image_name in enumerate(cls.IMAGES_NAMES):
             with open(os.path.join(cls.IMAGE_PATH, image_name, "apiResponse.json")) as f:
@@ -46,47 +94,34 @@ class TestReceipt(TestCase):
                 ax = fig.add_subplot(111)
                 ax.imshow(im)
                 h, w, _ = im.shape
-            cls.instances.append(Instance(receipt=receipt, expected=expected, name=image_name,
-                                          idx=n, fig=fig, ax=ax, w=w, h=h))
+            cls.instances.append(cls.Instance(receipt=receipt, expected=expected, name=image_name,
+                                              idx=n, fig=fig, ax=ax, w=w, h=h))
 
     def test_find_writing_angle(self):
         for ist in self.instances:
             ist.receipt.find_writing_angle()
-            ist.ax.arrow(ist.w / 2, ist.h / 2, math.cos(ist.receipt.angle) * ist.w / 10,
-                         math.sin(ist.receipt.angle) * ist.h / 10)
+            ist.draw_angle()
+            ist.breakpoint()
 
     def test_find_prices(self):
         for ist in self.instances:
             ist.receipt.find_prices()
-            if TestReceipt.SHOW:
-                x, y = zip(*[Receipt.get_bound_of_word(price) for price in ist.receipt.prices])
-
-                ist.ax.plot(np.array(x) * ist.w, np.array(y) * ist.h, "bo")
-            self.assertTrue(True)
+            ist.draw_prices()
+            ist.breakpoint()
 
     def test_find_total(self):
         for ist in self.instances:
             ist.receipt.find_total()
-            if TestReceipt.SHOW:
-                polygon = Polygon(np.array([Receipt.get_bound_of_word(ist.receipt.total_desc, i)
-                                            for i in range(4)]) * np.array([ist.w, ist.h]), closed=True)
-                ist.ax.plot(polygon.xy[:, 0], polygon.xy[:, 1], color='#6699cc', alpha=0.7, linewidth=3)
+            ist.draw_total()
+            ist.breakpoint()
 
     def test_find_columns(self):
         for ist in self.instances:
             ist.receipt.find_writing_angle()
             ist.receipt.find_prices()
             ist.receipt.find_columns()
-            if TestReceipt.SHOW:
-                number_of_columns = len(set(ist.receipt.price2column_map))
-                colors = [plt.get_cmap('gist_rainbow')(1. * i / number_of_columns) for i in range(number_of_columns)]
-
-                x, y = zip(*[Receipt.get_bound_of_word(price) for price in ist.receipt.prices])
-                mapped_colors = list(map(lambda i: colors[i], ist.receipt.price2column_map))
-                ist.ax.scatter(x=np.array(x) * ist.w, y=np.array(y) * ist.h, c=mapped_colors, alpha=0.5)
-                for column_idx, x_rot in enumerate(ist.receipt.column_x_rotated):
-                    ist.ax.text(x=x_rot * ist.w, y=ist.h / 10, s="{:.2f}".format(x_rot), c=colors[column_idx])
-            self.assertTrue(True)
+            ist.draw_columns()
+            ist.breakpoint()
 
     def test_find_items(self):
         for ist in self.instances:
@@ -95,25 +130,18 @@ class TestReceipt(TestCase):
             ist.receipt.find_columns()
             ist.receipt.find_total()
             ist.receipt.find_items()
-            if TestReceipt.SHOW:
-                number_items = len(ist.receipt.items)
-                colors = [plt.get_cmap('gist_rainbow')(1. * i / number_items) for i in range(number_items)]
-                mapped_colors = list(map(lambda i: colors[i], range(number_items)))
-                x, y = zip(*[Receipt.get_bound_of_word(item.desc_json) for item in ist.receipt.items])
-                ist.ax.scatter(x=np.array(x) * ist.w, y=np.array(y) * ist.h, c=mapped_colors, alpha=0.5)
-                x, y = zip(*[Receipt.get_bound_of_word(item.price_json) for item in ist.receipt.items])
-                ist.ax.scatter(x=np.array(x) * ist.w, y=np.array(y) * ist.h, c=mapped_colors, alpha=0.3)
-
-                polygon = Polygon(np.array([Receipt.get_bound_of_word(ist.receipt.total_json, i)
-                                            for i in range(4)]) * np.array([ist.w, ist.h]), closed=True)
-                ist.ax.plot(polygon.xy[:, 0], polygon.xy[:, 1], color='#6699cc', alpha=0.7, linewidth=3)
+            ist.breakpoint()
 
     def test_results(self):
         for ist in self.instances:
             ist.receipt.analyze()
+
+            ist.draw()
+            ist.breakpoint()
 
             self.assertEqual(ist.expected["total"], ist.receipt.total)
             self.assertEqual(len(ist.expected["items"]), len(ist.receipt.items))
             for item_expected, item in zip(ist.expected["items"], ist.receipt.items):
                 self.assertEqual(item_expected["desc"], item.desc)
                 self.assertAlmostEqual(item_expected["price"], item.price)
+

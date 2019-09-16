@@ -1,0 +1,17 @@
+{
+    "items": [
+        {
+            "desc": "Patatas artesanas",
+            "price": 0.99
+        },
+        {
+            "desc": "Ciruela roja 500 g",
+            "price": 0.79
+        },
+        {
+            "desc": "Nueces s/cascara",
+            "price": 2.79
+        }
+    ],
+    "total": 4.57
+}

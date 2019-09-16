@@ -1,0 +1,29 @@
+{
+    "items": [
+        {
+            "desc": "Napolitanas cacao",
+            "price": 0.99
+        },
+        {
+            "desc": "Platos preparados",
+            "price": 1.99
+        },
+        {
+            "desc": "Platos preparados",
+            "price": 1.99
+        },
+        {
+            "desc": "Taboule orental",
+            "price": 2.95
+        },
+        {
+            "desc": "Ensalada Cesar",
+            "price": 1.99
+        },
+        {
+            "desc": "Barra integral",
+            "price": 0.39
+        }
+    ],
+    "total": 8.54
+}
