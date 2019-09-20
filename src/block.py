@@ -1,20 +1,21 @@
+from typing import Dict
+
 import numpy as np
 
-from util import rotate_point, format_price
+from util import format_price
 
 
 class Block:
 
-    def __init__(self, block_json, receipt):
+    def __init__(self, block_json: Dict):
         self.json = block_json
-        self.receipt = receipt
 
-        self.id = block_json["Id"]
-        self.conf = block_json["Confidence"]
+        self.id: str = block_json["Id"]
+        self.conf = float(block_json["Confidence"])
         self.poly = np.array([(p["X"], p["Y"]) for p in block_json["Geometry"]["Polygon"]])
-        self.text = block_json["Text"]
-        self.bb = block_json["Geometry"]["BoundingBox"]
-        self.type = block_json["BlockType"]
+        self.text: str = block_json["Text"]
+        self.bb: Dict = block_json["Geometry"]["BoundingBox"]
+        self.type: str = block_json["BlockType"]
 
         self.is_price = False
         self.price_column = None
@@ -52,33 +53,8 @@ class Block:
         return (self.left_center + self.right_center) / 2
 
     @property
-    def left_center_rot(self):
-        return rotate_point(self.receipt.angle, self.left_center)
-
-    @property
-    def top_center_rot(self):
-        top_center = (self.top_left + self.top_right) / 2
-        return rotate_point(self.receipt.angle, top_center)
-
-    @property
-    def right_center_rot(self):
-        right_center = (self.top_right + self.bottom_right) / 2
-        return rotate_point(self.receipt.angle, right_center)
-
-    @property
-    def bottom_center_rot(self):
-        bottom_center = (self.bottom_left + self.bottom_right) / 2
-        return rotate_point(self.receipt.angle, bottom_center)
-
-    @property
-    def center_rot(self):
-        center = (self.top_left + self.top_right + self.bottom_right + self.bottom_left) / 4
-        return rotate_point(self.receipt.angle, center)
-
-    @property
     def price(self):
         return format_price(self.text)
 
     def __repr__(self):
-        return "<'{}' ({})>".format(self.text, hash(self))
-
+        return "'{}'".format(self.text)

@@ -1,6 +1,6 @@
 import math
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
 from fuzzywuzzy import fuzz
@@ -26,19 +26,19 @@ class Receipt:
         self.words: List[Block] = []
         self.prices: List[Block] = []
         self.columns: List[Column] = []
-
-        self.price2column_map: List[int] = []
+        self.total_desc: Union[None, Block] = None
         self.angle: float = 0
-        self.column_x_rotated = None
+
+        # self.price2column_map: List[int] = []
+        # self.column_x_rotated = None
         self.items: List[Item] = []
-        self.total_desc: Block = None
-        self.total: Block = None
+        self.total: Union[Item, None] = None
 
         for block_json in self.data["Blocks"]:
             if block_json["BlockType"] == "LINE":
-                self.lines.append(Block(block_json, self))
+                self.lines.append(Block(block_json))
             elif block_json["BlockType"] == "WORD":
-                self.words.append(Block(block_json, self))
+                self.words.append(Block(block_json))
 
     def analyze(self):
         self.find_writing_angle()
@@ -73,7 +73,7 @@ class Receipt:
                 word.is_price = True
 
     def find_total(self):
-        current_total: Block = None
+        current_total: Union[Block, None] = None
         current_total_ratio = 0
         for total_word in Receipt.TOTAL_WORDS:
             for word in self.words:
@@ -85,7 +85,7 @@ class Receipt:
                 # iterate through TOTAL words by priority if the first one is found -> break.
                 break
         if current_total is not None:
-            print("Found Total: {}".format(current_total.text))
+            # print("Found Total: {}".format(current_total.text))
             self.total_desc = current_total
 
     def find_columns(self):
@@ -117,9 +117,9 @@ class Receipt:
             for line in self.lines:
                 dist = get_dist_to_line(price.left_center, price.right_center, line.center)
                 if dist > Receipt.ROW_DIST_THRESHOLD:
-                    continue
-                if self.r(line.center)[0] + Receipt.COLUMN_SEPARATOR_THRESHOLD > price.left_center_rot[0]:
-                    continue
+                    continue  # don't consider a desc that is farther away from this price than the threshold
+                if self.r(line.center)[0] + Receipt.COLUMN_SEPARATOR_THRESHOLD > self.r(price.left_center)[0]:
+                    continue  # minimum distance between desc and price not > COLUMN_SEPARATOR_THRESHOLD
 
                 associated_desc_for_this_price.append((dist, line))
                 # calculate center of item line
@@ -128,6 +128,8 @@ class Receipt:
             if len(associated_desc_for_this_price) > 0:
                 best_matching_desc = sorted(associated_desc_for_this_price, key=lambda l: l[0])[0][1]
                 self.items.append(Item(best_matching_desc, price))
+            else:
+                print("could not associate price {} with any description".format(price.text))
 
     @property
     def words_json(self):
@@ -145,4 +147,24 @@ class Receipt:
         return np.array((word["Geometry"]["Polygon"][position]["X"], word["Geometry"]["Polygon"][position]["Y"]))
 
     def r(self, point):
-        return rotate_point(self.angle, point)
+        """
+        self.angle is measured like this: from horizontal line to what it is
+        0,0               1,0
+        +-------*-----------           ABC:             )8V
+        |       *                     a=0.0             a=pi
+        alpha  **      A
+        |    **        | u             U                 >
+        |  <*          | oo            oo   a=-pi/2     oo  a=pi/2
+        |              | <             <                 A
+        +-----------------1,1
+        so in order to rotate from actual image (noted above) to normalized x/y,
+        rotate with -self.angle around (0.5, 0.5)
+        (that actually means just take angle and go counterclockwise on image)
+
+        So, image -> normalized with angle= -pi/2 = -1.57
+             0,0  -> 1,0
+             1,0  -> 1,1
+             1,1  -> 0,1
+             0,1  -> 0,0
+        """
+        return rotate_point(-self.angle, point)

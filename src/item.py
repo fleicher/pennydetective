@@ -6,8 +6,8 @@ from util import format_price
 
 class Item:
     def __init__(self, desc: Block, price: Block):
-        self.desc_json = desc
-        self.price_json = price
+        self.desc_block = desc
+        self.price_block = price
 
         self.desc = desc.text
         self.price = format_price(price.text)
