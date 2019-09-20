@@ -1,11 +1,14 @@
 import math
 import re
+from typing import Tuple, Union, List
 
 import numpy as np
 from numpy.linalg import norm
 
+Point = Union[Tuple[float, float], np.ndarray]
 
-def rotate_point(angle, point, pivot=(.5, .5)):
+
+def rotate_point(angle: float, point: Point, pivot: Point = (.5, .5)) -> Point:
     """
     :param angle: angle in radius
     :param point: rotate this point
@@ -24,19 +27,19 @@ def rotate_point(angle, point, pivot=(.5, .5)):
     return qx, qy
 
 
-def get_angle(point1, point2):
+def get_angle(point1: Point, point2: Point) -> float:
     """
     :return: the angle of the line that runs from point1 to point2
     """
     return math.atan2(point2[1] - point1[1], point2[0] - point1[0])
 
 
-def get_abs_perp_angle_diff(angle1, angle2):
+def get_abs_perp_angle_diff(angle1: float, angle2: float) -> float:
     """
     :param angle1:
     :param angle2:
     :return: the absolute inner angle difference between two lines that cross
-    each other in the origin and have angle1 and angle2
+    each other in the origin and have anglecd ..1 and angle2
     """
     angle_diff = (abs(angle2 - angle1 + math.pi/2)) % math.pi
     result = min(math.pi - angle_diff, angle_diff)
@@ -44,7 +47,7 @@ def get_abs_perp_angle_diff(angle1, angle2):
     return result
 
 
-def get_dist_to_line(line_point1, line_point2, point):
+def get_dist_to_line(line_point1: Point, line_point2: Point, point: Point) -> float:
     """
     :param line_point1: first point defining the line
     :param line_point2: second point defining the line
@@ -65,3 +68,7 @@ def distance_between_two_points(a, b):
 def format_price(price):
     """ remove all non number characters and take care of ',' -> '.' conversion"""
     return float(re.sub('[^0-9.]+', '', price.replace(",", ".")))
+
+
+def avg(li: List):
+    return sum(li) / len(li)

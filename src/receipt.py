@@ -1,14 +1,14 @@
 import math
 import re
-from typing import List, Set, Dict
+from typing import List, Tuple
 
 import numpy as np
 from fuzzywuzzy import fuzz
 
 from block import Block
+from column import Column
 from item import Item
-from util import get_angle, get_abs_perp_angle_diff, rotate_point, get_dist_to_line, \
-    format_price
+from util import get_angle, get_abs_perp_angle_diff, rotate_point, get_dist_to_line
 
 
 class Receipt:
@@ -22,21 +22,23 @@ class Receipt:
     def __init__(self, data):
         self.data = data
 
-        self.lines, self.words = [], []
+        self.lines: List[Block] = []
+        self.words: List[Block] = []
+        self.prices: List[Block] = []
+        self.columns: List[Column] = []
 
-        self.bounds = None
-        self.prices: List[Dict] = []
         self.price2column_map: List[int] = []
         self.angle: float = 0
         self.column_x_rotated = None
         self.items: List[Item] = []
-        self.total_desc = self.total_json = self.total = None
+        self.total_desc: Block = None
+        self.total: Block = None
 
-        for block in self.data["Blocks"]:
-            if block["BlockType"] == "LINE":
-                self.lines.append(Block(block))
-            elif block["BlockType"] == "WORD":
-                self.words.append(Block(block))
+        for block_json in self.data["Blocks"]:
+            if block_json["BlockType"] == "LINE":
+                self.lines.append(Block(block_json, self))
+            elif block_json["BlockType"] == "WORD":
+                self.words.append(Block(block_json, self))
 
     def analyze(self):
         self.find_writing_angle()
@@ -51,19 +53,8 @@ class Receipt:
         """
         some_lines = [self.lines[i] for i in range(0, len(self.lines), len(self.lines) // 30)]
         angles = [get_angle(line.top_left, line.top_right) for line in some_lines]
-        return sum(angles) / len(angles)
-
-    # def find_writing_angle(self):
-    #     """
-    #     take <=30 lines from the receipt and determine the angle of writing
-    #     """
-    #     angles = []
-    #     for line in [self.lines_json[i] for i in range(0, len(self.lines_json), len(self.lines_json) // 30)]:
-    #         point_top_left = self.get_bound_of_word(line, 0)
-    #         point_top_right = self.get_bound_of_word(line, 1)
-    #         angles.append(get_angle(point_top_left, point_top_right))
-    #     self.angle = sum(angles) / len(angles)
-    #     return angles
+        self.angle = sum(angles) / len(angles)
+        return self.angle
 
     def find_prices(self):
         """
@@ -82,107 +73,61 @@ class Receipt:
                 word.is_price = True
 
     def find_total(self):
-        current_total_json = None
+        current_total: Block = None
         current_total_ratio = 0
         for total_word in Receipt.TOTAL_WORDS:
-            for word in self.words_json:
-                # ratio = max([fuzz.ratio(word["Text"].lower(), total_word) for total_word in Receipt.TOTAL_WORDS])
-                ratio = fuzz.ratio(word["Text"].lower(), total_word)
+            for word in self.words:
+                ratio = fuzz.ratio(word.text.lower(), total_word)
                 if ratio > current_total_ratio and ratio > Receipt.TOTAL_THRESHOLD:
                     current_total_ratio = ratio
-                    current_total_json = word
-            if current_total_json is not None:
+                    current_total = word
+            if current_total is not None:
                 # iterate through TOTAL words by priority if the first one is found -> break.
                 break
-        if current_total_json is not None:
-            print("Found Total: {}".format(current_total_json["Text"]))
-            self.total_desc = current_total_json
+        if current_total is not None:
+            print("Found Total: {}".format(current_total.text))
+            self.total_desc = current_total
 
     def find_columns(self):
-        not_mapped_prices: Set[int] = set(range(len(self.prices)))  # list(enumerate(self.prices))
-        self.price2column_map: List = [None] * len(self.prices)
-        column_counter = 0
-        while len(not_mapped_prices) > 0:
-            idx1 = sorted(not_mapped_prices).pop(0)
-            not_mapped_prices.remove(idx1)
-            point1 = Receipt.get_bound_of_word(self.prices[idx1])
-            self.price2column_map[idx1] = column_counter
-            for idx2 in sorted(not_mapped_prices):
-                point2 = Receipt.get_bound_of_word(self.prices[idx2])
-                angle = get_angle(point1, point2)
+        undone_prices = self.prices.copy()
+        while len(undone_prices) > 0:
+            price1 = undone_prices.pop(0)
+            column = Column(price1)
+            for price2 in undone_prices.copy():
+                angle = get_angle(price1.top_right, price2.top_right)
                 if get_abs_perp_angle_diff(self.angle, angle) < self.COLUMN_ANGLE_TRESHOLD:
-                    not_mapped_prices.remove(idx2)
-                    self.price2column_map[idx2] = column_counter
-            column_counter += 1
-
-        column_x_rotated_list = [[] for _ in range(column_counter)]
-        for price_idx, price in enumerate(self.prices):
-            point = Receipt.get_bound_of_word(price)
-            x_rot, _ = rotate_point(self.angle, point)
-            column_x_rotated_list[self.price2column_map[price_idx]].append(x_rot)
-        self.column_x_rotated = [
-            sum(column_x_rotated_list[column_idx]) / len(column_x_rotated_list[column_idx])
-            for column_idx in range(column_counter)
-        ]
+                    undone_prices.remove(price2)
+                    column.add(price2)
+            self.columns.append(column)
 
     def find_items(self):
-        right_most_column_index = int(np.argmax(self.column_x_rotated))
         total_height = 1.0
-        current_total_price_min_descr = total_desc_right_center_point = total_desc_right_center_point_rotated = None
-        current_total_price_min_dist = math.sqrt(2)
         if self.total_desc is not None:
-            total_desc_right_center_point = (Receipt.get_bound_of_word(self.total_desc, 1)
-                                             + Receipt.get_bound_of_word(self.total_desc, 2)) / 2
-            _, total_height = rotate_point(self.angle, total_desc_right_center_point)
-            total_desc_right_center_point_rotated = rotate_point(self.angle, total_desc_right_center_point)
+            _, total_height = self.r(self.total_desc.right_center)
+            total_distances = [(get_dist_to_line((0, total_height), (0.1, total_height),
+                                                 self.r(price.left_center)), price) for price in self.prices]
+            self.total = Item(self.total_desc, min(total_distances, key=lambda x: x[0])[1])
 
-        for price_idx, price in enumerate(self.prices):
-            price_left_center_point = (Receipt.get_bound_of_word(price, 0) + Receipt.get_bound_of_word(price, 3)) / 2
-            price_right_center_point = (Receipt.get_bound_of_word(price, 1) + Receipt.get_bound_of_word(price, 2)) / 2
-            price_left_center_point_rotated = rotate_point(self.angle, price_left_center_point)
+        right_column = max(self.columns, key=lambda c: c.get_rotated_x(self.angle))
+        for price in right_column.prices:
+            if self.r(price.bottom_left)[1] > total_height:
+                continue  # this price is below the total sum
 
-            # check how close it is 'TOTAL' label
-            if total_desc_right_center_point is not None:
-                dist_to_current_price = get_dist_to_line(
-                    (0, total_height), (0.1, total_height), price_left_center_point_rotated)
-                if dist_to_current_price < current_total_price_min_dist and \
-                        total_desc_right_center_point_rotated[1] < price_left_center_point_rotated[1]:
-                    current_total_price_min_dist = dist_to_current_price
-                    current_total_price_min_descr = price
-
-            if self.price2column_map[price_idx] != right_most_column_index:
-                continue
-            if rotate_point(self.angle, Receipt.get_bound_of_word(price, 3))[1] > total_height:
-                continue
-            # calculate center of price.
-            associated_lines = []
-            for line in self.lines_json:
-                center_point = sum([Receipt.get_bound_of_word(line, i) for i in range(4)]) / 4
-                dist = get_dist_to_line(price_left_center_point, price_right_center_point, center_point)
+            associated_desc_for_this_price: List[Tuple[float, Block]] = []
+            for line in self.lines:
+                dist = get_dist_to_line(price.left_center, price.right_center, line.center)
                 if dist > Receipt.ROW_DIST_THRESHOLD:
                     continue
-                center_point_rotated = rotate_point(self.angle, center_point)
-                if center_point_rotated[0] + Receipt.COLUMN_SEPARATOR_THRESHOLD > price_left_center_point_rotated[0]:
+                if self.r(line.center)[0] + Receipt.COLUMN_SEPARATOR_THRESHOLD > price.left_center_rot[0]:
                     continue
 
-                associated_lines.append((dist, line))
-                # calculate center of itemline
+                associated_desc_for_this_price.append((dist, line))
+                # calculate center of item line
                 # difference of this center to ray from price.
 
-            if len(associated_lines) > 0:
-                desc = sorted(associated_lines, key=lambda l: l[0])[0]
-                self.items.append(Item(desc[1], price))
-
-        if current_total_price_min_descr is not None:
-            self.total_json = current_total_price_min_descr
-            self.total = format_price(current_total_price_min_descr["Text"])
-
-    def group(self):
-        for block in self.data["Blocks"]:
-            if block["BlockType"] != "LINE":
-                continue
-            if block["Geometry"]["BoundingBox"]["Top"] > self.bounds["top"]:
-                pass
+            if len(associated_desc_for_this_price) > 0:
+                best_matching_desc = sorted(associated_desc_for_this_price, key=lambda l: l[0])[0][1]
+                self.items.append(Item(best_matching_desc, price))
 
     @property
     def words_json(self):
@@ -198,3 +143,6 @@ class Receipt:
     @staticmethod
     def get_bound_of_word(word, position: int = 1):
         return np.array((word["Geometry"]["Polygon"][position]["X"], word["Geometry"]["Polygon"][position]["Y"]))
+
+    def r(self, point):
+        return rotate_point(self.angle, point)

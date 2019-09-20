@@ -16,7 +16,7 @@ class TestReceipt(TestCase):
     SHOW = True
     IMAGE_PATH = "../data/"
     IMAGES_NAMES = (
-        "DSC_3618", # "DSC_3619"
+        "DSC_3607",  # "DSC_3618", "DSC_3619"
     )
 
     class Instance(NamedTuple):
@@ -34,37 +34,42 @@ class TestReceipt(TestCase):
                          math.sin(self.receipt.angle) * self.h / 10)
 
         def draw_prices(self):
-            x, y = zip(*[Receipt.get_bound_of_word(price) for price in self.receipt.prices])
+            x, y = zip(*[price[1] for price in self.receipt.prices])
 
             self.ax.plot(np.array(x) * self.w, np.array(y) * self.h, "bo")
 
         def draw_total(self):
-            polygon = Polygon(np.array([Receipt.get_bound_of_word(self.receipt.total_desc, i)
-                                        for i in range(4)]) * np.array([self.w, self.h]), closed=True)
+            polygon = Polygon(np.array([self.receipt.total_desc[i] for i in range(4)])
+                              * np.array([self.w, self.h]), closed=True)
             self.ax.plot(polygon.xy[:, 0], polygon.xy[:, 1], color='#6699cc', alpha=0.7, linewidth=3)
             self.fig.show()
 
         def draw_columns(self):
-            number_of_columns = len(set(self.receipt.price2column_map))
+            number_of_columns = len(self.receipt.columns)
             colors = [plt.get_cmap('gist_rainbow')(1. * i / number_of_columns) for i in range(number_of_columns)]
 
-            x, y = zip(*[Receipt.get_bound_of_word(price) for price in self.receipt.prices])
-            mapped_colors = list(map(lambda i: colors[i], self.receipt.price2column_map))
-            self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=mapped_colors, alpha=0.5)
-            for column_idx, x_rot in enumerate(self.receipt.column_x_rotated):
+            # x, y = zip(*[price[1] for price in self.receipt.prices])
+            # mapped_colors = list(map(lambda i: colors[i], self.receipt.price2column_map))
+            # self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=mapped_colors, alpha=0.5)
+            # for column_idx, x_rot in enumerate(self.receipt.column_x_rotated):
+            #     self.ax.text(x=x_rot * self.w, y=self.h / 10, s="{:.2f}".format(x_rot), c=colors[column_idx])
+            for column_idx, column in enumerate(self.receipt.columns):
+                x, y = zip(*[price.top_right for price in column.prices])
+                self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=colors[column_idx], alpha=0.5)
+                x_rot = column.get_rotated_x(self.receipt.angle)
                 self.ax.text(x=x_rot * self.w, y=self.h / 10, s="{:.2f}".format(x_rot), c=colors[column_idx])
 
         def draw_items(self):
             number_items = len(self.receipt.items)
             colors = [plt.get_cmap('gist_rainbow')(1. * i / number_items) for i in range(number_items)]
             mapped_colors = list(map(lambda i: colors[i], range(number_items)))
-            x, y = zip(*[Receipt.get_bound_of_word(item.desc_json) for item in self.receipt.items])
+            x, y = zip(*[item.desc_json[1] for item in self.receipt.items])
             self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=mapped_colors, alpha=0.5, edgecolors='b')
-            x, y = zip(*[Receipt.get_bound_of_word(item.price_json) for item in self.receipt.items])
+            x, y = zip(*[item.price_json[1] for item in self.receipt.items])
             self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=mapped_colors, alpha=0.3, edgecolors='b')
 
-            polygon = Polygon(np.array([Receipt.get_bound_of_word(self.receipt.total_json, i)
-                                        for i in range(4)]) * np.array([self.w, self.h]), closed=True)
+            polygon = Polygon(np.array([self.receipt.total_desc[i] for i in range(4)])
+                              * np.array([self.w, self.h]), closed=True)
             self.ax.plot(polygon.xy[:, 0], polygon.xy[:, 1], color='#6699cc', alpha=0.7, linewidth=3)
             self.fig.show()
 
@@ -130,6 +135,7 @@ class TestReceipt(TestCase):
             ist.receipt.find_columns()
             ist.receipt.find_total()
             ist.receipt.find_items()
+            ist.draw_items()
             ist.breakpoint()
 
     def test_results(self):
