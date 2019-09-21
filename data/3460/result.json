@@ -1,0 +1,21 @@
+{
+  "total": 4.15,
+  "items": [
+    {
+      "desc": "felsaft",
+      "price": 1.2
+    },
+    {
+      "desc": "rnensaft",
+      "price": 1.2
+    },
+    {
+      "desc": "ange-Maracuja",
+      "price": 1.3
+    },
+    {
+      "desc": "Flaschen +",
+      "price": 0.45
+    }
+  ]
+}

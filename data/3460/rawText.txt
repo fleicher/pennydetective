@@ -1,0 +1,36 @@
+
+LINDEMANN
+Fruchtsafte
+75175 Pforzheim
+Tel.: 07231/61876
+DATUM 03/02/2017 DON ZEIT 15:12
+E1.20
+felsaft
+rnensaft
+E1.20
+ange-Maracuja
+E1.30
+@ 0.15
+Flaschen +
+E0.45
+ZWS
+E4.15
+6.00xPOST.
+BRUTTO1
+E4.15
+STEUER 1 SATZ
+19.000X
+NETTO1
+E3.49
+MWST 19%
+E0.66
+SUMME
+E4.15
+BAR
+E4.15
+USt.IDNr.: DE193055919
+Wir danken Ihnen
+fur Ihren Einkauf
+!
+BEDIENER 1
+075765 00000

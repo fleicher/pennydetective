@@ -1,0 +1,42 @@
+{
+  "total": 22.21,
+  "items": [
+    {
+      "desc": "4x BUTTER",
+      "price": 3.99
+    },
+    {
+      "desc": "TOMATEN 250G",
+      "price": 2.48
+    },
+    {
+      "desc": "CORNFLAKES",
+      "price": 0.75
+    },
+    {
+      "desc": "ZWIEBELN",
+      "price": 1.49
+    },
+    {
+      "desc": "6x EIER GROB",
+      "price": 2.99,
+      "discount": 0.75
+    },
+    {
+      "desc": "PREMIUM OLIVENOL",
+      "price": 7.59
+    },
+    {
+      "desc": "SALZ 100g",
+      "price": 1.39
+    },
+    {
+      "desc": "MAYONNAISE",
+      "price": 1.49
+    },
+    {
+      "desc": "SAUERRAHM",
+      "price": 0.79
+    }
+  ]
+}
