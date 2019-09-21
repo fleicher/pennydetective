@@ -13,6 +13,7 @@ class TestReceipt(TestCase):
     SHOW = True
     IMAGE_PATH = "../data/"
     IMAGES_NAMES = (
+        "3460", "8507", "kassenbon-1", "Nubon", "nudelhusli", "QR",
         "DSC_3607", "DSC_3618", "DSC_3619"
     )
 
@@ -25,15 +26,12 @@ class TestReceipt(TestCase):
                 receipt = Receipt(json.load(f))
             with open(os.path.join(cls.IMAGE_PATH, image_name, "result.json")) as f:
                 expected = json.load(f)
-            fig, ax, w, h = None, None, None, None
-            if cls.SHOW:
-                im = plt.imread(os.path.join(cls.IMAGE_PATH, image_name, image_name + ".JPG"))
-                fig = plt.figure(n)
-                ax = fig.add_subplot(111)
-                ax.imshow(im)
-                h, w, _ = im.shape
+
+            im = None if not cls.SHOW else plt.imread(os.path.join(cls.IMAGE_PATH,  image_name,
+                                                                   "image.jpg"))
+
             cls.instances.append(Instance(receipt=receipt, expected=expected, name=image_name,
-                                          idx=n, fig=fig, ax=ax, w=w, h=h))
+                                          idx=n, im=im))
 
     def test_find_writing_angle(self):
         for ist in self.instances:

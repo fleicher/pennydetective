@@ -1,5 +1,5 @@
 import math
-from typing import NamedTuple, Dict
+from typing import Dict, Optional
 
 import matplotlib.figure
 import numpy as np
@@ -10,15 +10,47 @@ import matplotlib.pyplot as plt
 from receipt import Receipt
 
 
-class Instance(NamedTuple):
-    receipt: Receipt
-    expected: Dict
-    name: str
-    idx: int
-    fig: matplotlib.figure.Figure = None
-    ax: matplotlib.figure.Axes = None
-    w: int = None
-    h: int = None
+class Instance:
+
+    def __init__(self, receipt: Receipt, expected: Dict, name: str, idx: int,
+                 im: Optional[np.ndarray] = None):
+        self.receipt = receipt
+        self.expected = expected
+        self.name = name
+        self.idx = idx
+        self.im = im
+        self._fig, self._ax, self._w, self._h = None, None, None, None
+
+    @property
+    def fig(self):
+        self._create_fig_if_necessary()
+        return self._fig
+
+    @property
+    def ax(self):
+        self._create_fig_if_necessary()
+        return self._ax
+
+    @property
+    def w(self):
+        self._create_fig_if_necessary()
+        return self._w
+
+    @property
+    def h(self):
+        self._create_fig_if_necessary()
+        return self._h
+
+    def _create_fig_if_necessary(self):
+        if self._fig is not None:
+            return
+        if self.im is None:
+            raise ValueError("No value for parameter 'im' was set")
+        self._fig: matplotlib.figure.Figure = plt.figure(self.idx)
+        self._ax: matplotlib.figure.Axes = self._fig.add_subplot(111)
+        self._ax.imshow(self.im)
+        self._h: float = self.im.shape[0]
+        self._w: float = self.im.shape[1]
 
     def draw_angle(self):
         self.ax.arrow(self.w / 2, self.h / 2, math.cos(self.receipt.angle) * self.w / 10,
@@ -49,11 +81,12 @@ class Instance(NamedTuple):
         if number_items == 0:
             print("couldn't find any items")
             return
-        colors = [get_color(i, number_items) for i in range(number_items)]
         x, y = zip(*[item.desc_block[1] for item in self.receipt.items])
-        self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=colors, alpha=0.5, edgecolors='b')
+        self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=get_colors(number_items),
+                        alpha=0.5, edgecolors='b')
         x, y = zip(*[item.price_block[1] for item in self.receipt.items])
-        self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=colors, alpha=0.3, edgecolors='b')
+        self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=get_colors(number_items),
+                        alpha=0.3, edgecolors='b')
         if self.receipt.total is not None and self.receipt.total_desc is not None:
             for block in (self.receipt.total_desc, self.receipt.total.price_block):
                 polygon = Polygon(np.array([block[i] for i in range(4)])
@@ -78,3 +111,7 @@ def get_color(i: int, n: int) -> np.ndarray:
     """ creates a rainbow, gives color #i (0-indexed) of n colors"""
     return np.array(plt.get_cmap('gist_rainbow')(1. * i / n)).reshape(1, -1)
 
+
+def get_colors(n: int) -> np.ndarray:
+    """ creates a rainbow, gives n colors"""
+    return np.stack([get_color(i, n) for i in range(n)]).reshape(n, -1)

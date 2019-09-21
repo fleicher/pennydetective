@@ -19,7 +19,7 @@ class Receipt:
     ROW_DIST_THRESHOLD = 0.05
     COLUMN_SEPARATOR_THRESHOLD = 0.2
 
-    def __init__(self, data):
+    def __init__(self, data, name=None):
         self.data = data
 
         self.lines: List[Block] = []
@@ -29,8 +29,7 @@ class Receipt:
         self.total_desc: Union[None, Block] = None
         self.angle: float = 0
 
-        # self.price2column_map: List[int] = []
-        # self.column_x_rotated = None
+        self.name = name
         self.items: List[Item] = []
         self.total: Union[Item, None] = None
 
@@ -51,7 +50,9 @@ class Receipt:
         """
         take <=30 lines from the receipt and determine the angle of writing
         """
-        some_lines = [self.lines[i] for i in range(0, len(self.lines), len(self.lines) // 30)]
+        LINE_SAMPLE_SIZE = 30
+        some_lines = self.lines if len(self.lines) <= LINE_SAMPLE_SIZE else [
+            self.lines[i] for i in range(0, len(self.lines), len(self.lines) // 30)]
         angles = [get_angle(line.top_left, line.top_right) for line in some_lines]
         self.angle = sum(angles) / len(angles)
         return self.angle
@@ -177,3 +178,6 @@ class Receipt:
              0,1  -> 0,0
         """
         return rotate_point(-self.angle, point)
+
+    def __repr__(self):
+        return self.name
