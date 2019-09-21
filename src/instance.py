@@ -4,7 +4,8 @@ from typing import NamedTuple, Dict
 import matplotlib.figure
 import numpy as np
 from matplotlib.patches import Polygon
-from mpl_toolkits.mplot3d.art3d import get_colors
+import matplotlib.pyplot as plt
+
 
 from receipt import Receipt
 
@@ -36,7 +37,7 @@ class Instance(NamedTuple):
 
     def draw_columns(self):
         number_of_columns = len(self.receipt.columns)
-        colors = [get_colors(i, number_of_columns) for i in range(number_of_columns)]
+        colors = [get_color(i, number_of_columns) for i in range(number_of_columns)]
         for column_idx, column in enumerate(self.receipt.columns):
             x, y = zip(*[price.top_left for price in column.prices])
             self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=colors[column_idx], alpha=0.5)
@@ -48,7 +49,7 @@ class Instance(NamedTuple):
         if number_items == 0:
             print("couldn't find any items")
             return
-        colors = [get_colors(i, number_items) for i in range(number_items)]
+        colors = [get_color(i, number_items) for i in range(number_items)]
         x, y = zip(*[item.desc_block[1] for item in self.receipt.items])
         self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=colors, alpha=0.5, edgecolors='b')
         x, y = zip(*[item.price_block[1] for item in self.receipt.items])
@@ -71,3 +72,9 @@ class Instance(NamedTuple):
 
     def __repr__(self):
         return self.name
+
+
+def get_color(i: int, n: int) -> np.ndarray:
+    """ creates a rainbow, gives color #i (0-indexed) of n colors"""
+    return np.array(plt.get_cmap('gist_rainbow')(1. * i / n)).reshape(1, -1)
+

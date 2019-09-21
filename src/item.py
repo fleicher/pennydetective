@@ -12,5 +12,12 @@ class Item:
         self.desc = desc.text
         self.price = format_price(price.text)
 
+    @property
+    def json(self):
+        return {
+            "desc": self.desc,
+            "price": self.price,
+        }
+
     def __repr__(self):
         return "<{}:{}>".format(self.desc, self.price)

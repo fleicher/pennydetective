@@ -1,7 +1,6 @@
 import math
 import re
 from typing import Tuple, Union, List
-import matplotlib.pyplot as plt
 
 import numpy as np
 from numpy.linalg import norm
@@ -73,8 +72,3 @@ def format_price(price):
 
 def avg(li: List):
     return sum(li) / len(li)
-
-def get_color(i: int, n: int) -> np.ndarray:
-    """ creates a rainbow, gives color #i (0-indexed) of n colors"""
-    return np.array(plt.get_cmap('gist_rainbow')(1. * i / n)).reshape(1, -1)
-

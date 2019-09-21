@@ -131,6 +131,15 @@ class Receipt:
             else:
                 print("could not associate price {} with any description".format(price.text))
 
+    def get_json(self):
+        result = {
+            "total": None if self.total is None else self.total.price,
+            "items": [],
+        }
+        for item in self.items:
+            result["items"].append(item.json)
+        return result
+
     @property
     def words_json(self):
         return self._get_blocks_of_type("WORD")
