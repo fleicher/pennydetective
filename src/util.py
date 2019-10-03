@@ -1,5 +1,4 @@
 import math
-import re
 from typing import Tuple, Union, List
 
 import numpy as np
@@ -60,15 +59,10 @@ def get_dist_to_line(line_point1: Point, line_point2: Point, point: Point) -> fl
     return norm(np.cross(line_point2 - line_point1, line_point1 - point)) / norm(line_point2 - line_point1)
 
 
-def distance_between_two_points(a, b):
+def distance_between_two_points(a: Point, b: Point) -> float:
     """https://stackoverflow.com/questions/1401712/how-can-the-euclidean-distance-be-calculated-with-numpy"""
     return np.linalg.norm(a - b)
 
 
-def format_price(price):
-    """ remove all non number characters and take care of ',' -> '.' conversion"""
-    return float(re.sub('[^0-9.]+', '', price.replace(",", ".")))
-
-
-def avg(li: List):
+def avg(li: List) -> float:
     return sum(li) / len(li)

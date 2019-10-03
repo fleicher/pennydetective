@@ -1,0 +1,13 @@
+{
+    "items": [
+        {
+            "desc": "Wasche",
+            "price": 14.99
+        },
+        {
+            "desc": "Wasche",
+            "price": 14.99
+        }
+    ],
+    "total": 29.98
+}

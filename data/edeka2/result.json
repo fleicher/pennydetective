@@ -1,0 +1,37 @@
+{
+    "items": [
+        {
+            "desc": "TRAGETASCHE",
+            "price": 0.10
+        },
+        {
+            "desc": "BIO E.ESL MILCH",
+            "price": 0.99
+        },
+        {
+            "desc": "TEEK .GRUENTEE",
+            "price": 2.29
+        },
+        {
+            "desc": "E .GITTERCHIPS",
+            "price": 0.99
+        },
+        {
+            "desc": "BR THE BRALEO, 355L",
+            "price": 2.99
+        },
+        {
+            "desc": "PFAND",
+            "price": 0.25
+        },
+        {
+            "desc": "BRAUF YAKER0S0,355",
+            "price": 2.49
+        },
+        {
+            "desc": "PFAND",
+            "price": 0.25
+        }
+    ],
+    "total": 10.35
+}

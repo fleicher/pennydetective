@@ -1,0 +1,25 @@
+{
+    "items": [
+        {
+            "desc": "BIERSCHINKEN",
+            "price": 1.49
+        },
+        {
+            "desc": "LOTSENWURST",
+            "price": 1.59
+        },
+        {
+            "desc": "PETRELLA SCHNITT",
+            "price": 1.69
+        },
+        {
+            "desc": "DAS VOLLE KORN",
+            "price": 1.29
+        },
+        {
+            "desc": "QUARK CREME ERD",
+            "price": 0.55
+        }
+    ],
+    "total": 6.61
+}

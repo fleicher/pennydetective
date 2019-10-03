@@ -1,7 +1,4 @@
-import re
-
 from block import Block
-from util import format_price
 
 
 class Item:
@@ -10,7 +7,7 @@ class Item:
         self.price_block = price
 
         self.desc = desc.text
-        self.price = format_price(price.text)
+        self.price = price.price
 
     @property
     def json(self):

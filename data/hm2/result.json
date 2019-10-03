@@ -1,0 +1,21 @@
+{
+    "items": [
+        {
+            "desc": "Wasche",
+            "price": 14.99
+        },
+        {
+            "desc": "Basic Jersey",
+            "price": 7.99
+        },
+        {
+            "desc": "Basic Jersey",
+            "price": 7.99
+        },
+        {
+            "desc": "Basic Jersey",
+            "price": 7.99
+        }
+    ],
+    "total": 38.96
+}

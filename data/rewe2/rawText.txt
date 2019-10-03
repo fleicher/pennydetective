@@ -1,0 +1,79 @@
+
+REWE
+CITY
+R E W E City
+Neuer Steinweg 18
+20459 Hamburg
+Telefon: 040/3480994
+UID Nr. : DE812706034
+EUR
+BIERSCHINKEN
+,77 B
+GOURMET SALAMI
+1,49 B
+HOEHLENKAESE
+2,59 B
+DAS VOLLE KORN
+1,29 B
+TOM. INTENSE
+2,29 B
+SUMME
+EUR
+8,43
+Geg. Mastercard
+EUR
+8,43
+XK Kundenbeleg
+XK
+XK
+Datum:
+02.09.2019
+Uhrzeit
+19: 19:11:19 Uhr
+Beleg-Nr.
+1759
+Trace-Nr
+261459
+Bezahlung
+Kontaktlos
+Debit MasterCar
+Nr
+############2825 0002
+VU-Nr
+4556002079
+Terminal-I
+56003026
+Pos-Info
+00 073 00
+AS-Zeit 02.09.
+19:11 Uhr
+AS-Proc-Code E 00 075 00
+Capt. -Ref E 0000
+00 GENEHMIGT
+Betrag EUR
+8,43
+Zahlung erfolgt
+Steuer %
+Netto
+Steuer
+Brutto
+B: 7,0%
+7,88
+0,55
+8,43
+Gesantbetrag
+7,88
+0,55
+8,43
+02.09.2019
+19:11
+Bon-Nr. 7298
+Markt:0073
+Kasse:
+Bed. :333333
+Noch keine PAYBACK Karte?
+Fur diesen Einkauf hatten Sie
+4 Punkte erhalten!
+Gleich hier am REWE Service--Punkt im Markt
+anmelden oder auf WWW. rewe.de/payback
+REWE Markt GmbH

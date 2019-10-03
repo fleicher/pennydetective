@@ -2,22 +2,18 @@ import math
 from typing import Dict, Optional
 
 import matplotlib.figure
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Polygon
-import matplotlib.pyplot as plt
-
 
 from receipt import Receipt
 
 
 class Instance:
-
-    def __init__(self, receipt: Receipt, expected: Dict, name: str, idx: int,
+    def __init__(self, receipt: Receipt, expected: Dict,
                  im: Optional[np.ndarray] = None):
         self.receipt = receipt
         self.expected = expected
-        self.name = name
-        self.idx = idx
         self.im = im
         self._fig, self._ax, self._w, self._h = None, None, None, None
 
@@ -46,7 +42,7 @@ class Instance:
             return
         if self.im is None:
             raise ValueError("No value for parameter 'im' was set")
-        self._fig: matplotlib.figure.Figure = plt.figure(self.idx)
+        self._fig: matplotlib.figure.Figure = plt.figure(self.receipt.name)
         self._ax: matplotlib.figure.Axes = self._fig.add_subplot(111)
         self._ax.imshow(self.im)
         self._h: float = self.im.shape[0]
@@ -54,7 +50,8 @@ class Instance:
 
     def draw_angle(self):
         self.ax.arrow(self.w / 2, self.h / 2, math.cos(self.receipt.angle) * self.w / 10,
-                      math.sin(self.receipt.angle) * self.h / 10)
+                      math.sin(self.receipt.angle) * self.h / 10,
+                      head_width=0.02 * self.h, head_length=0.05 * self.w, fc='k', ec='k')
 
     def draw_prices(self):
         x, y = zip(*[price[1] for price in self.receipt.prices])
@@ -74,12 +71,12 @@ class Instance:
             x, y = zip(*[price.top_left for price in column.prices])
             self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=colors[column_idx], alpha=0.5)
             x_rot = column.get_rotated_x(self.receipt.angle)
-            self.ax.text(x=x_rot * self.w, y=self.h / 10, s="{:.2f}".format(x_rot), c=colors[column_idx])
+            self.ax.text(x=x_rot * self.w, y=self.h / 10, s="{:.2f}".format(x_rot), c=list(colors[column_idx][0]))
 
     def draw_items(self):
         number_items = len(self.receipt.items)
         if number_items == 0:
-            print("couldn't find any items")
+            print("[{}] Couln't find any items".format(self.name))
             return
         x, y = zip(*[item.desc_block[1] for item in self.receipt.items])
         self.ax.scatter(x=np.array(x) * self.w, y=np.array(y) * self.h, c=get_colors(number_items),
@@ -105,6 +102,10 @@ class Instance:
 
     def __repr__(self):
         return self.name
+
+    @property
+    def name(self):
+        return self.receipt.name
 
 
 def get_color(i: int, n: int) -> np.ndarray:

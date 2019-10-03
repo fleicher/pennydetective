@@ -11,27 +11,26 @@ from receipt import Receipt
 
 class TestReceipt(TestCase):
     SHOW = True
-    IMAGE_PATH = "../data/"
+    DATA_PATH = "../data/"
     IMAGES_NAMES = (
-        "3460", "8507", "kassenbon-1", "Nubon", "nudelhusli", "QR",
-        "DSC_3607", "DSC_3618", "DSC_3619"
+        "dm2", "edeka1", "edeka2",
+        "hm", "hm2", "rewe1", "rewe2",
+        # "3460", "8507", "kassenbon-1", "Nubon",
+        # "QR",
+        # "DSC_3607", "DSC_3618", "DSC_3619",
     )
 
     @classmethod
-    def setUpClass(cls) -> None:
+    def setUpClass(cls):
         cls.instances: List[Instance] = []
-
-        for n, image_name in enumerate(cls.IMAGES_NAMES):
-            with open(os.path.join(cls.IMAGE_PATH, image_name, "apiResponse.json")) as f:
-                receipt = Receipt(json.load(f))
-            with open(os.path.join(cls.IMAGE_PATH, image_name, "result.json")) as f:
+        for name in cls.IMAGES_NAMES:
+            with open(os.path.join(cls.DATA_PATH, name, "apiResponse.json")) as f:
+                receipt = Receipt(json.load(f), name=name)
+            with open(os.path.join(cls.DATA_PATH, name, "result.json")) as f:
                 expected = json.load(f)
 
-            im = None if not cls.SHOW else plt.imread(os.path.join(cls.IMAGE_PATH,  image_name,
-                                                                   "image.jpg"))
-
-            cls.instances.append(Instance(receipt=receipt, expected=expected, name=image_name,
-                                          idx=n, im=im))
+            im = None if not cls.SHOW else plt.imread(os.path.join(cls.DATA_PATH, name, "image.jpg"))
+            cls.instances.append(Instance(receipt=receipt, expected=expected, im=im))
 
     def test_find_writing_angle(self):
         for ist in self.instances:
@@ -70,12 +69,24 @@ class TestReceipt(TestCase):
             ist.breakpoint()
 
     def test_results(self):
+        number_correct = 0
         for ist in self.instances:
+            is_correct = True
             ist.receipt.analyze()
             ist.draw()
 
-            self.assertEqual(ist.expected["total"], ist.receipt.total.price)
-            self.assertEqual(len(ist.expected["items"]), len(ist.receipt.items))
-            for item_expected, item in zip(ist.expected["items"], ist.receipt.items):
-                self.assertEqual(item_expected["desc"], item.desc)
-                self.assertAlmostEqual(item_expected["price"], item.price)
+            is_correct &= ist.expected["total"] == ist.receipt.total.price
+            same_length = len(ist.expected["items"]) == len(ist.receipt.items)
+            is_correct &= same_length
+            if same_length:
+                for n, (item_expected, item) in enumerate(zip(ist.expected["items"], ist.receipt.items)):
+                    if item_expected["desc"] != item.desc or item_expected["price"] != item.price:
+                        print("[{}] #{} <'{}': {}> != <'{}': {}>".format(
+                            ist.name, n, item_expected["desc"], item_expected["price"], item.desc, item.price
+                        ))
+                        is_correct = False
+            number_correct += is_correct
+            print("[{}] Result: {}, Length: {}".format(
+                ist.receipt.name, is_correct, same_length))
+            pass
+        self.assertEqual(number_correct, len(self.instances))

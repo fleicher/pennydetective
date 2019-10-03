@@ -1,0 +1,21 @@
+{
+    "items": [
+        {
+            "desc": "H-CITYHEMD 1/1",
+            "price": 49.99
+        },
+        {
+            "desc": "H-JEANS",
+            "price": 99.99
+        },
+        {
+            "desc": "H-STRUMPF",
+            "price": 7.99
+        },
+        {
+            "desc": "H-FRZT-HEMD 1/1",
+            "price": 19.99
+        }
+    ],
+    "total": 177.96
+}

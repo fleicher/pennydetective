@@ -1,0 +1,25 @@
+{
+    "items": [
+        {
+            "desc": "BIERSCHINKEN",
+            "price": 0.77
+        },
+        {
+            "desc": "GOURMET SALAMI",
+            "price": 1.49
+        },
+        {
+            "desc": "HOEHLENKAESE",
+            "price": 2.59
+        },
+        {
+            "desc": "DAS VOLLE KORN",
+            "price": 1.29
+        },
+        {
+            "desc": "TOM. INTENSE",
+            "price": 2.29
+        }
+    ],
+    "total": 8.43
+}

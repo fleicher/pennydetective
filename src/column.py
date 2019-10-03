@@ -14,4 +14,4 @@ class Column:
         return avg([point[0] for point in rotated_points])
 
     def __repr__(self):
-        return "[{}]".format(";".join([price.text[:6] for price in self.prices[:5]]))
+        return "`{}´".format(";".join([price.text[:6] for price in self.prices[:5]]))

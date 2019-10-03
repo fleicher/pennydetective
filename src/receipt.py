@@ -2,7 +2,6 @@ import math
 import re
 from typing import List, Tuple, Union
 
-import numpy as np
 from fuzzywuzzy import fuzz
 
 from block import Block
@@ -18,6 +17,7 @@ class Receipt:
     COLUMN_ANGLE_TRESHOLD = math.pi / 8
     ROW_DIST_THRESHOLD = 0.05
     COLUMN_SEPARATOR_THRESHOLD = 0.2
+    ANGLE_SAMPLE_SIZE = 30
 
     def __init__(self, data, name=None):
         self.data = data
@@ -50,9 +50,8 @@ class Receipt:
         """
         take <=30 lines from the receipt and determine the angle of writing
         """
-        LINE_SAMPLE_SIZE = 30
-        some_lines = self.lines if len(self.lines) <= LINE_SAMPLE_SIZE else [
-            self.lines[i] for i in range(0, len(self.lines), len(self.lines) // 30)]
+        some_lines = self.lines if len(self.lines) <= Receipt.ANGLE_SAMPLE_SIZE else [
+            self.lines[i] for i in range(0, len(self.lines), len(self.lines) // Receipt.ANGLE_SAMPLE_SIZE)]
         angles = [get_angle(line.top_left, line.top_right) for line in some_lines]
         self.angle = sum(angles) / len(angles)
         return self.angle
@@ -66,10 +65,17 @@ class Receipt:
         """
 
         pattern = re.compile(Receipt.REGEX)
-        # self.prices = [word for word in self.words_json if pattern.match(word["Text"])]
         self.prices = []
         for word in self.words:
-            if pattern.match(word.text):
+            # #################################
+            # This would be a simpler matching
+            # if pattern.match(word.text):
+            # self.prices.append(word)
+            # #################################
+
+            result = pattern.search(word.text)
+            if result and result.span()[0] <= 2:
+                # accept prices but also if there was a currency symbol in front
                 self.prices.append(word)
                 word.is_price = True
 
@@ -100,6 +106,7 @@ class Receipt:
                     undone_prices.remove(price2)
                     column.add(price2)
             self.columns.append(column)
+        self.columns.sort(key=lambda column_: column_.get_rotated_x(self.angle))
 
     def find_items(self):
         total_height = 1.0
@@ -110,11 +117,30 @@ class Receipt:
             self.total = Item(self.total_desc, min(total_distances, key=lambda x: x[0])[1])
 
         right_column = max(self.columns, key=lambda c: c.get_rotated_x(self.angle))
+
+        # ############################################################################# #
+        #                          CRITERIA FOR DETERMINING THE ITEMS                   #
+        # ############################################################################# #
+        #
+        # * Don't take any prices that are below the sum line.
+        #
+        # Deal with the following scenarios:            (everything could be off)
+        #       direct:
+        #           NameA       1.00                    NameA
+        #           NameB       2.00                    NameB       1.00
+        #                                                           2.00
+        #       multi-line:
+        #           NameA                               NameA           1.00
+        #               InfoA    1.00                FurtherInfoA
+        #           NameB                               NameB
+        #               InfoB    2.00                FurtherInfoB    2.00
+        #
+        # There should be some plausibility check to make it match as good as possible.
+
         for price in right_column.prices:
             if self.r(price.bottom_left)[1] > total_height:
                 continue  # this price is below the total sum
 
-            associated_desc_for_this_price: List[Tuple[float, Block]] = []
             for line in self.lines:
                 dist = get_dist_to_line(price.left_center, price.right_center, line.center)
                 if dist > Receipt.ROW_DIST_THRESHOLD:
@@ -122,17 +148,18 @@ class Receipt:
                 if self.r(line.center)[0] + Receipt.COLUMN_SEPARATOR_THRESHOLD > self.r(price.left_center)[0]:
                     continue  # minimum distance between desc and price not > COLUMN_SEPARATOR_THRESHOLD
 
-                associated_desc_for_this_price.append((dist, line))
+                price.associated_descs.append((dist, line))
                 # calculate center of item line
                 # difference of this center to ray from price.
 
-            if len(associated_desc_for_this_price) > 0:
-                best_matching_desc = sorted(associated_desc_for_this_price, key=lambda l: l[0])[0][1]
+            if len(price.associated_descs) > 0:
+                best_matching_desc = sorted(price.associated_descs, key=lambda l: l[0])[0][1]
                 self.items.append(Item(best_matching_desc, price))
             else:
-                print("could not associate price {} with any description".format(price.text))
+                print("[{}] could not associate price {} with any description".format(self.name, price.text))
 
     def get_json(self):
+        """ this method is used by the AWS Lambda function"""
         result = {
             "total": None if self.total is None else self.total.price,
             "items": [],
@@ -140,21 +167,6 @@ class Receipt:
         for item in self.items:
             result["items"].append(item.json)
         return result
-
-    @property
-    def words_json(self):
-        return self._get_blocks_of_type("WORD")
-
-    @property
-    def lines_json(self):
-        return self._get_blocks_of_type("LINE")
-
-    def _get_blocks_of_type(self, type_="LINE"):
-        return [block for block in self.data["Blocks"] if block["BlockType"] == type_]
-
-    @staticmethod
-    def get_bound_of_word(word, position: int = 1):
-        return np.array((word["Geometry"]["Polygon"][position]["X"], word["Geometry"]["Polygon"][position]["Y"]))
 
     def r(self, point):
         """

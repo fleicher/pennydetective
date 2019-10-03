@@ -1,8 +1,7 @@
-from typing import Dict
+import re
+from typing import Dict, List, Tuple
 
 import numpy as np
-
-from util import format_price
 
 
 class Block:
@@ -19,7 +18,8 @@ class Block:
 
         self.is_price = False
         self.price_column = None
-        self.linked_description, self.linked_price = None, None
+        self.associated_descs: List[Tuple[float, Block]] = []
+        # self.linked_description, self.linked_price = None, None
 
     def __getitem__(self, no):
         return self.poly[no]
@@ -54,7 +54,9 @@ class Block:
 
     @property
     def price(self):
-        return format_price(self.text)
+        assert self.is_price
+        """ remove all non number characters and take care of ',' -> '.' conversion"""
+        return float(re.sub('[^0-9.]+', '', self.text.replace(",", ".")))
 
     def __repr__(self):
-        return "'{}'".format(self.text)
+        return "`{}`".format(self.text)
