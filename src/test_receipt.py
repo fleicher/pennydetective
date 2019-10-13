@@ -14,9 +14,9 @@ class TestReceipt(TestCase):
     DATA_PATH = "../data/"
     IMAGES_NAMES = (
         "dm2", "edeka1", "edeka2",
-        "hm", "hm2", "rewe1", "rewe2",
-        # "3460", "8507", "kassenbon-1", "Nubon",
-        # "QR",
+        # "hm", "hm2",
+        "rewe1", "rewe2",
+        # "3460", "8507", "kassenbon-1", "Nubon", "QR",
         # "DSC_3607", "DSC_3618", "DSC_3619",
     )
 

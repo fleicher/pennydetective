@@ -11,7 +11,7 @@ from util import get_angle, get_abs_perp_angle_diff, rotate_point, get_dist_to_l
 
 
 class Receipt:
-    REGEX = r"\d+(\.|,)\d\d"
+    REGEX = r"\d+(\.|,)[ ]?\d\d"
     TOTAL_WORDS = ("total", "zu zahlen", "pagar", "zwischensumme", "summe", "suma",)
     TOTAL_THRESHOLD = 65
     COLUMN_ANGLE_TRESHOLD = math.pi / 8
@@ -79,6 +79,9 @@ class Receipt:
                 self.prices.append(word)
                 word.is_price = True
 
+        # TODO: fault detection for partial prices in places where we expect prices to be
+        # TODO: rescan in such cases.
+
     def find_total(self):
         current_total: Union[Block, None] = None
         current_total_ratio = 0
@@ -130,7 +133,7 @@ class Receipt:
         #           NameB       2.00                    NameB       1.00
         #                                                           2.00
         #       multi-line:
-        #           NameA                               NameA           1.00
+        #           NameA                               NameA       1.00
         #               InfoA    1.00                FurtherInfoA
         #           NameB                               NameB
         #               InfoB    2.00                FurtherInfoB    2.00
