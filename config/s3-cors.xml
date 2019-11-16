@@ -1,0 +1,13 @@
+<!-- https://docs.aws.amazon.com/AmazonS3/latest/user-guide/add-cors-configuration.html -->
+<CORSConfiguration>
+ <CORSRule>
+   <AllowedOrigin>*</AllowedOrigin>
+   <AllowedMethod>GET</AllowedMethod>
+   <AllowedMethod>PUT</AllowedMethod>
+   <AllowedMethod>POST</AllowedMethod>
+   <AllowedMethod>DELETE</AllowedMethod>
+   <AllowedHeader>*</AllowedHeader>
+ </CORSRule>
+</CORSConfiguration>
+<!-- also watch out: https://stackoverflow.com/questions/56709408/403-forbidden-when-trying-to-upload-pdf-as-blob-to-s3-bucket-using-put -->
+<!-- added "everyone": https://console.aws.amazon.com/s3/buckets/elasticbeanstalk-us-east-2-693859464061/?region=us-east-2&tab=permissions -->

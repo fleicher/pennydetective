@@ -6,7 +6,6 @@ const AWS = require('aws-sdk');
 console.log("running from region" + process.env.REGION);
 AWS.config.update({ region: process.env.REGION || 'us-east-2' });
 const s3 = new AWS.S3();
-
 const uploadBucket = 'elasticbeanstalk-us-east-2-693859464061';   // << LOOK!
 
 exports.handler = async (event) => {
@@ -38,9 +37,11 @@ const getUploadURL = async function() {
         "Access-Control-Allow-Origin": "*"
       },
       "body": JSON.stringify({
-          "uploadURL": uploadURL,
-          "photoFilename": `${actionId}.jpg`
+        "uploadURL": uploadURL,
+        "photoFilename": `${actionId}.jpg`
       })
     })
   })
 };
+
+exports.handler();

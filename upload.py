@@ -29,6 +29,15 @@ lambdas = {
             "role": "arn:aws:iam::693859464061:role/lambda-repository"
         },
         "src": ["url.js"]
+    },
+    "GetSignedURL": {
+        "config": {
+            "handler": "GetSignedURL.handler",
+            "timeout": 3,
+            "runtime": "nodejs10.x",
+            "role": "arn:aws:iam::693859464061:role/lambda-repository"
+        },
+        "src": ["GetSignedURL.js"]
     }
 }
 
@@ -41,20 +50,25 @@ def upload(name, update_config=False, create_function=False):
             # don't include "src" folder in zip
             z.write("src/" + filename, arcname=filename)
     print("created zip file")
-
-    arguments = [
-        "aws", "lambda", "create-function" if create_function else "update-function-code",
-        "--function-name", name,
-        "--zip-file", "fileb://" + zip_path
-    ]
-    if create_function:
-        arguments.extend([
-            "--runtime", lambdas[name]["config"]["runtime"],  # "nodejs10.x" | "python3.6"
-            "--role", lambdas[name]["config"]["role"],  # as ARN, e.g.: arn:aws:iam::693859464061:role/my-role
-            "--handler", lambdas[name]["config"]["handler"],  # in the format "file-without-suffix.method-name"
-            "--timeout", str(lambdas[name]["config"]["timeout"])  # integer in seconds
-        ])
-    print(subprocess.check_output(arguments))
+    for _ in range(2):
+        arguments = [
+            "aws", "lambda", "create-function" if create_function else "update-function-code",
+            "--function-name", name,
+            "--zip-file", "fileb://" + zip_path
+        ]
+        if create_function:
+            arguments.extend([
+                "--runtime", lambdas[name]["config"]["runtime"],  # "nodejs10.x" | "python3.6"
+                "--role", lambdas[name]["config"]["role"],  # as ARN, e.g.: arn:aws:iam::693859464061:role/my-role
+                "--handler", lambdas[name]["config"]["handler"],  # in the format "file-without-suffix.method-name"
+                "--timeout", str(lambdas[name]["config"]["timeout"])  # integer in seconds
+            ])
+        try:
+            print(subprocess.check_output(arguments))
+            break
+        except subprocess.CalledProcessError: # ResourceNotFoundException:
+            print("failed to upload, will try again once more.")
+            create_function = True  # try again with "create new lambda"
 
     if update_config:
         print(subprocess.check_output([
