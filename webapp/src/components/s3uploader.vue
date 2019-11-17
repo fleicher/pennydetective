@@ -40,7 +40,7 @@ export default {
       let reader = new FileReader();
 
       reader.onload = (e) => {
-        console.log('length: ', e.target.result.includes('data:image/jpeg'));
+        console.log('is jpg?: ', e.target.result.includes('data:image/jpeg'));
         if (!e.target.result.includes('data:image/jpeg')) {
           return alert('Wrong file type - JPG only.')
         }
@@ -58,35 +58,21 @@ export default {
     },
     uploadImage: async function (e) {
       console.log('Upload clicked');
-
-      // Get the presigned URL
+      const apiurl = `https://muz8yko9fj.execute-api.us-east-2.amazonaws.com/test/s3upload`;
       const response = await axios({
-        method: 'GET',
-        url: `https://muz8yko9fj.execute-api.us-east-2.amazonaws.com/test/s3upload`
-        //url: `https://k5y741pgj8.execute-api.us-east-2.amazonaws.com/beta`
+          method: 'POST',
+          url: apiurl,
+          data: {
+              account: "0815",
+              suffix: '.jpg',
+              type: "image/jpeg",
+              image: this.image.split(',')[1],
+          },
+          headers: { 'Content-Type': 'application/json' },
       });
-
       console.log('Response: ', response.data);
-      console.log('Uploading: ', this.image);
-
-      let binary = atob(this.image.split(',')[1]);
-      let array = [];
-      for (var i = 0; i < binary.length; i++) {
-        array.push(binary.charCodeAt(i))
-      }
-      let blobData = new Blob([new Uint8Array(array)], {type: 'image/jpeg'});
-      console.log('Uploading to url: ', response.data.uploadURL);
-
-      const result = await fetch(response.data.uploadURL, {
-        method: 'PUT',
-        body: blobData,
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      console.log('Result of Upload: ', result);
-
-      // Final URL for the user doesn't need the query string params
-      this.uploadURL = response.data.uploadURL.split('?')[0]
+      // const data = JSON.parse(response.data);
+      this.uploadURL = response.data.url
     }
   }
 }
